@@ -33,12 +33,12 @@ impl<'a> InitEscrowAccount<'a> {
         if !initializer.is_signer {
             return Err(EscrowError::InvalidSigner);
         }
-        if !get_associated_token_address(escrow_state.key, &token_a_mint.key).eq(&token_a_vault.key)
+        if !get_associated_token_address(escrow_state.key, &token_a_mint.key).eq(token_a_vault.key)
         {
             return Err(EscrowError::VaultKeyMismatch);
         };
         match account_info_iter.next() {
-            Some(_) => return Err(EscrowError::NotEnoughAccountKeys),
+            Some(_) => Err(EscrowError::NotEnoughAccountKeys),
             None => Ok(InitEscrowAccount {
                 initializer,
                 token_a_vault,
@@ -105,7 +105,7 @@ impl<'a> ExchangeAccount<'a> {
         }
 
         match account_info_iter.next() {
-            Some(_) => return Err(EscrowError::NotEnoughAccountKeys),
+            Some(_) => Err(EscrowError::NotEnoughAccountKeys),
             None => Ok(ExchangeAccount {
                 taker,
                 initializer,

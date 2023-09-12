@@ -20,7 +20,7 @@ impl Processor {
         accounts: &'a [AccountInfo<'a>],
         instruction_data: &[u8],
     ) -> Result<(), EscrowError> {
-        return match EscrowInstruction::unpack(instruction_data) {
+        match EscrowInstruction::unpack(instruction_data) {
             Ok(s) => match s {
                 EscrowInstruction::Exchange { amount } => Self::process_exchange(accounts, amount),
                 EscrowInstruction::InitEscrow {
@@ -30,7 +30,7 @@ impl Processor {
                 } => Self::process_init_escrow(accounts, amount_to_trade, amount_expected, seed),
             },
             Err(e) => Err(e),
-        };
+        }
     }
     fn process_init_escrow<'a>(
         accounts: &'a [AccountInfo<'a>],
@@ -80,7 +80,7 @@ impl Processor {
             &spl_token::ID,
             &ctx.token_a_founder.key,
             &ctx.token_a_mint.key,
-            &ctx.token_a_vault.key,
+            ctx.token_a_vault.key,
             ctx.initializer.key,
             &[],
             amount_to_trade,
@@ -93,12 +93,12 @@ impl Processor {
         EscrowState::pack(
             EscrowState {
                 is_initialized: true,
-                initializer_pubkey: ctx.initializer.key.clone(),
+                initializer_pubkey: *ctx.initializer.key,
                 mint_a: ctx.token_a_mint.key,
                 mint_b: ctx.token_b_mint.key,
                 expected_amount: amount_expected,
-                bump: bump,
-                seed: seed,
+                bump,
+                seed,
             },
             &mut ctx.escrow_state.try_borrow_mut_data().unwrap(),
         )
@@ -113,8 +113,8 @@ impl Processor {
 
         // create A token account owned by the taker
         let create_a_reciever_ata = create_associated_token_account_idempotent(
-            &ctx.taker.key,
-            &ctx.taker.key,
+            ctx.taker.key,
+            ctx.taker.key,
             &ctx.token_a_mint.key,
             &spl_token::ID,
         );
@@ -136,16 +136,16 @@ impl Processor {
             &take_transfer,
             accounts,
             &[&[
-                &ctx.escrow_account_info.info.seed.clone().to_le_bytes(),
+                &ctx.escrow_account_info.info.seed.to_le_bytes(),
                 &ctx.initializer.key.to_bytes(),
-                &ctx.escrow_account_info.info.bump.clone().to_le_bytes(),
+                &ctx.escrow_account_info.info.bump.to_le_bytes(),
             ]],
         )
         .unwrap();
 
         // create B token account owned by the initializer
         let creata_b_reciever_ata = create_associated_token_account_idempotent(
-            &ctx.taker.key,
+            ctx.taker.key,
             &ctx.escrow_account_info.key,
             &ctx.token_b_mint.key,
             &spl_token::ID,
@@ -158,7 +158,7 @@ impl Processor {
             &ctx.token_b_founder.key,
             &ctx.token_b_mint.key,
             ctx.token_b_receiver.key,
-            &ctx.taker.key,
+            ctx.taker.key,
             &[],
             ctx.escrow_account_info.info.expected_amount,
             ctx.token_b_mint.info.decimals,
@@ -179,9 +179,9 @@ impl Processor {
             &close_vault,
             accounts,
             &[&[
-                &ctx.escrow_account_info.info.seed.clone().to_le_bytes(),
+                &ctx.escrow_account_info.info.seed.to_le_bytes(),
                 &ctx.initializer.key.to_bytes(),
-                &ctx.escrow_account_info.info.bump.clone().to_le_bytes(),
+                &ctx.escrow_account_info.info.bump.to_le_bytes(),
             ]],
         )
         .unwrap();

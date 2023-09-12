@@ -9,9 +9,7 @@ fn process_instruction<'a>(
     accounts: &'a [AccountInfo<'a>],
     instruction_data: &[u8],
 ) -> ProgramResult {
-    if let Err(e) = check_program_account(program_id) {
-        return Err(e);
-    }
+    check_program_account(program_id)?;
     if let Err(e) = Processor::process(accounts, instruction_data) {
         return Err(e.print_into());
     };
